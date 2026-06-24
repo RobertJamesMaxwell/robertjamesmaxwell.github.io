@@ -1,13 +1,15 @@
 # Robert Maxwell — System Design
 
-Engineering leader with a focus on distributed systems, developer experience, and scalable architecture. This site is a collection of deep-dive case studies documenting how I think through hard system design problems — tradeoffs, constraints, and the reasoning behind decisions.
+Engineering leader with a focus on distributed systems, developer experience, and scalable architecture. This site is a collection of deep-dive system designs documenting how I think through hard problems — tradeoffs, constraints, and the reasoning behind decisions.
 
-## Case Studies
+## Designs
 
-_Coming soon._
+- [Workflow Orchestration: Temporal vs Camunda](designs/temporal-vs-camunda.md)
 
 ## About
 
-I'm a software engineer based in New Orleans currently focused on developer experience and platform engineering. I'm interested in staff-level roles at high-performing teams building serious software.
+I'm a software engineering leader based in New Orleans with experience scaling distributed systems in production healthcare environments. I currently lead developer experience at Cohere Health, where I focus on platform engineering, CI/CD, observability, and the systems that let engineering teams move fast without breaking things.
+
+I'm actively exploring staff engineer roles at high-performing product companies building serious software at scale.
 
 [GitHub](https://github.com/RobertJamesMaxwell)

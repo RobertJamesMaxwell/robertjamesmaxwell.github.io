@@ -20,3 +20,5 @@ extra_css:
 
 nav:
   - Home: index.md
+  - Designs:
+      - Temporal vs Camunda: designs/temporal-vs-camunda.md

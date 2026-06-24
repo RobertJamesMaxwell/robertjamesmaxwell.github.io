@@ -5,15 +5,18 @@ site_url: https://robertjamesmaxwell.github.io
 theme:
   name: material
   palette:
-    scheme: slate
-    primary: teal
-    accent: teal
+    scheme: default
+    primary: custom
+    accent: custom
   features:
     - navigation.tabs
     - navigation.sections
     - navigation.top
     - search.highlight
     - content.code.copy
+
+extra_css:
+  - stylesheets/extra.css
 
 nav:
   - Home: index.md

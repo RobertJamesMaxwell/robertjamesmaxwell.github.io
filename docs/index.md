@@ -4,12 +4,12 @@ Engineering leader with a focus on distributed systems, developer experience, an
 
 ## Designs
 
-- [Workflow Orchestration: Temporal vs Camunda](designs/temporal-vs-camunda.md)
+- [Designing a Governed Inbound Data Integration Pipeline](designs/iris-pipeline-architecture-design-PORTFOLIO.md)
 
 ## About
 
-I'm a software engineering leader based in New Orleans with experience scaling distributed systems in production healthcare environments. I currently lead developer experience at Cohere Health, where I focus on platform engineering, CI/CD, observability, and the systems that let engineering teams move fast without breaking things.
+Software engineer at Cohere Health, a healthcare technology company building prior authorization infrastructure. I work across the stack on high-stakes, high-visibility delivery. Increasingly focused on platform engineering and developer experience: the systems, tooling, and infrastructure that let engineering teams do their best work.
 
-I'm actively exploring staff engineer roles at high-performing product companies building serious software at scale.
+Exploring staff engineer roles with a platform or devex focus.
 
-[GitHub](https://github.com/RobertJamesMaxwell)
+[LinkedIn](#) · [GitHub](https://github.com/RobertJamesMaxwell)

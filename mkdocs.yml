@@ -21,4 +21,4 @@ extra_css:
 nav:
   - Home: index.md
   - Designs:
-      - Temporal vs Camunda: designs/temporal-vs-camunda.md
+      - Inbound Updates Integration Pipeline: designs/iris-pipeline-architecture-design-PORTFOLIO.md

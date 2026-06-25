@@ -1,0 +1,53 @@
+:root {
+  --md-primary-fg-color: #0f6e56;
+  --md-primary-fg-color--light: #1d9e75;
+  --md-primary-fg-color--dark: #085041;
+  --md-primary-bg-color: #f5f0e8;
+  --md-accent-fg-color: #92400e;
+  --md-default-bg-color: #f5f0e8;
+  --md-default-fg-color: #44403c;
+  --md-default-fg-color--light: #78716c;
+  --md-default-fg-color--lighter: #a8a29e;
+  --md-typeset-a-color: #0f6e56;
+}
+
+.md-header {
+  background-color: #0f6e56;
+  box-shadow: none;
+}
+
+.md-header__title {
+  color: #f5f0e8;
+}
+
+.md-search__input {
+  background-color: #085041;
+  color: #f5f0e8;
+}
+
+.md-tabs {
+  background-color: #085041;
+}
+
+.md-tabs__link {
+  color: #d6ede4;
+}
+
+.md-tabs__link--active {
+  color: #f5f0e8;
+}
+
+body,
+.md-main,
+.md-content,
+.md-sidebar {
+  background-color: #f5f0e8;
+}
+
+.md-footer {
+  background-color: #0f6e56;
+}
+
+.md-footer-meta {
+  background-color: #085041;
+}

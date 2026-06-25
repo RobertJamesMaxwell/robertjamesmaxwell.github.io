@@ -1,0 +1,2131 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Deep-dive system design case studies and architecture notes">
+      
+      
+      
+        <link rel="canonical" href="https://robertjamesmaxwell.github.io/designs/inbound-update-integration-pipeline/">
+      
+      
+        <link rel="prev" href="../..">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Inbound Update Integration Pipeline - Robert Maxwell — System Design</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#huginn-and-muninn-designing-a-governed-inbound-data-integration-pipeline" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Robert Maxwell — System Design" class="md-header__button md-logo" aria-label="Robert Maxwell — System Design" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Robert Maxwell — System Design
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Inbound Update Integration Pipeline
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+  Designs
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Robert Maxwell — System Design" class="md-nav__button md-logo" aria-label="Robert Maxwell — System Design" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Robert Maxwell — System Design
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Designs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Designs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inbound Update Integration Pipeline
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Inbound Update Integration Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#background" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#on-naming-systems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        On Naming Systems
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#problem-statement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem Statement
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-core-problem-governing-inbound-updates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Core Problem: Governing Inbound Updates
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conceptual-foundation-named-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conceptual Foundation — Named Patterns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Conceptual Foundation — Named Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enterprise-integration-patterns-hohpe-woolf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enterprise Integration Patterns (Hohpe &amp; Woolf)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#designing-data-intensive-applications-kleppmann" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Designing Data-Intensive Applications (Kleppmann)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#software-architecture-the-hard-parts-ford-richards-sadalage-dehghani" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Software Architecture: The Hard Parts (Ford, Richards, Sadalage, Dehghani)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hexagonal-architecture-ports-and-adapters-cockburn-clean-architecture-martin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hexagonal Architecture / Ports and Adapters (Cockburn; Clean Architecture — Martin)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-philosophy-of-software-design-ousterhout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A Philosophy of Software Design (Ousterhout)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#partner-delta-the-cautionary-tale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Partner Delta — The Cautionary Tale
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Partner Delta — The Cautionary Tale">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-it-was-two-separate-flows-with-no-coordination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it was: two separate flows with no coordination
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-this-produced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this produced
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-two-layers-of-complexity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two layers of complexity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-real-lesson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The real lesson
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommended-client-integration-profile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended Client Integration Profile
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Recommended Client Integration Profile">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#required-non-negotiable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✅ Required — non-negotiable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#strongly-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🟢 Strongly recommended
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🟡 Recommended
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deviation-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deviation handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-v1-question-does-muninn-need-to-exist-now" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The v1 Question — Does Muninn Need to Exist Now?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The v1 Question — Does Muninn Need to Exist Now?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#option-d-ship-the-first-integration-via-the-legacy-path-now-build-muninn-when-the-second-spec-is-firm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option D — Ship the first integration via the legacy path now; build Muninn when the second spec is firm
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#failure-mode-coverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failure Mode Coverage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#idempotency-and-the-transactional-inbox" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Idempotency and the Transactional Inbox
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Idempotency and the Transactional Inbox">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The pattern
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mistake-1-content-hash-idempotency-has-the-wrong-semantics-for-status-updates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mistake 1: Content-hash idempotency has the wrong semantics for status updates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mistake-2-the-processing-status-creates-a-liveness-bug" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mistake 2: The PROCESSING status creates a liveness bug
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#corrected-idempotency-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Corrected idempotency flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-needs-to-change-in-the-audit-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What needs to change in the audit service
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture Options
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture Options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#option-a-muninn-as-huginn-mirror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option A — Muninn as Huginn Mirror
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-b-gateway-kafka-per-client-consumers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option B — Gateway + Kafka + Per-Client Consumers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-c-sync-first-single-service-recommended-for-v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option C — Sync-First, Single Service (recommended for v1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-d-ship-on-the-legacy-path-now-build-muninn-when-the-second-spec-is-firm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option D — Ship on the Legacy Path Now; Build Muninn When the Second Spec Is Firm
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparison
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Details
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#write-back-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Write-Back Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pipeline-stage-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipeline Stage Design
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validation-and-transformation-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation and Transformation Engine
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loop-prevention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Loop Prevention
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment Strategy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open Questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#background" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#on-naming-systems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        On Naming Systems
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#problem-statement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem Statement
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-core-problem-governing-inbound-updates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Core Problem: Governing Inbound Updates
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conceptual-foundation-named-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conceptual Foundation — Named Patterns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Conceptual Foundation — Named Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enterprise-integration-patterns-hohpe-woolf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Enterprise Integration Patterns (Hohpe &amp; Woolf)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#designing-data-intensive-applications-kleppmann" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Designing Data-Intensive Applications (Kleppmann)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#software-architecture-the-hard-parts-ford-richards-sadalage-dehghani" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Software Architecture: The Hard Parts (Ford, Richards, Sadalage, Dehghani)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hexagonal-architecture-ports-and-adapters-cockburn-clean-architecture-martin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hexagonal Architecture / Ports and Adapters (Cockburn; Clean Architecture — Martin)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-philosophy-of-software-design-ousterhout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A Philosophy of Software Design (Ousterhout)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#partner-delta-the-cautionary-tale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Partner Delta — The Cautionary Tale
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Partner Delta — The Cautionary Tale">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-it-was-two-separate-flows-with-no-coordination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What it was: two separate flows with no coordination
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-this-produced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What this produced
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-two-layers-of-complexity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two layers of complexity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-real-lesson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The real lesson
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommended-client-integration-profile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended Client Integration Profile
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Recommended Client Integration Profile">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#required-non-negotiable" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ✅ Required — non-negotiable
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#strongly-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🟢 Strongly recommended
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🟡 Recommended
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deviation-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deviation handling
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-v1-question-does-muninn-need-to-exist-now" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The v1 Question — Does Muninn Need to Exist Now?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The v1 Question — Does Muninn Need to Exist Now?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#option-d-ship-the-first-integration-via-the-legacy-path-now-build-muninn-when-the-second-spec-is-firm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option D — Ship the first integration via the legacy path now; build Muninn when the second spec is firm
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#failure-mode-coverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failure Mode Coverage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#idempotency-and-the-transactional-inbox" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Idempotency and the Transactional Inbox
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Idempotency and the Transactional Inbox">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The pattern
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mistake-1-content-hash-idempotency-has-the-wrong-semantics-for-status-updates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mistake 1: Content-hash idempotency has the wrong semantics for status updates
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mistake-2-the-processing-status-creates-a-liveness-bug" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mistake 2: The PROCESSING status creates a liveness bug
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#corrected-idempotency-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Corrected idempotency flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-needs-to-change-in-the-audit-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What needs to change in the audit service
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture Options
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture Options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#option-a-muninn-as-huginn-mirror" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option A — Muninn as Huginn Mirror
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-b-gateway-kafka-per-client-consumers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option B — Gateway + Kafka + Per-Client Consumers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-c-sync-first-single-service-recommended-for-v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option C — Sync-First, Single Service (recommended for v1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#option-d-ship-on-the-legacy-path-now-build-muninn-when-the-second-spec-is-firm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Option D — Ship on the Legacy Path Now; Build Muninn When the Second Spec Is Firm
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comparison
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation Details
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Implementation Details">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#write-back-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Write-Back Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pipeline-stage-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipeline Stage Design
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validation-and-transformation-engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation and Transformation Engine
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loop-prevention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Loop Prevention
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment Strategy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open Questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-takeaways" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Takeaways
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="huginn-and-muninn-designing-a-governed-inbound-data-integration-pipeline">Huginn and Muninn: Designing a Governed Inbound Data Integration Pipeline</h1>
+<p><em>A system design case study exploring the architecture of an inbound integration framework for a loan origination platform — covering distributed systems tradeoffs, idempotency design, field ownership governance, and the cautionary tale of a bidirectional integration that went badly wrong.</em></p>
+<hr />
+<h2 id="background">Background</h2>
+<p>Most integration teams spend the majority of their time thinking about outbound data — getting records out of your system of record and into third-party systems reliably, at scale, with good observability. The outbound problem is well-solved: event-driven pipelines using change data capture, per-tenant Kafka consumers, config-driven enrichment and delivery stages. You write something, a pipeline notices, it delivers it.</p>
+<p>The inbound problem is harder and far less discussed. When third-party systems need to push updates <em>back into</em> your system of record — decisions, status changes, approvals, denials — you face a genuinely difficult set of distributed systems challenges: idempotency, field ownership, race conditions, audit trails, and the ever-present risk of creating a feedback loop between your outbound and inbound pipelines.</p>
+<p>This document describes the design of <strong>Muninn</strong> — an inbound integration pipeline built as the complement to an existing outbound pipeline called <strong>Huginn</strong>. The domain is loan origination: a platform that submits loan applications to external lending institutions, receives credit decisions back, and must maintain a reliable, auditable, conflict-free record of both.</p>
+<p>The design principles are broadly applicable to any system that receives governed updates from external sources. The distributed systems problems here — idempotency, field ownership, write skew, loop prevention — are not domain-specific.</p>
+<hr />
+<h2 id="on-naming-systems">On Naming Systems</h2>
+<p>The naming is intentional, and the convention matters enough to explain.</p>
+<p>In Norse mythology, Huginn and Muninn are Odin's two ravens. Each morning he sends them out across the nine worlds; by nightfall they return and perch on his shoulders, whispering what they have seen. <strong>Huginn</strong> means <em>Thought</em> — intention and information flowing outward into the world. <strong>Muninn</strong> means <em>Memory</em> — knowledge returning home.</p>
+<p>The metaphor is exact: Huginn carries loan application data outward to lenders. Muninn carries their decisions back.</p>
+<p>This follows the principle of <em>ubiquitous language</em> from Domain-Driven Design. Compare:</p>
+<blockquote>
+<p><em>"Is this a Huginn issue or a Muninn issue?"</em></p>
+</blockquote>
+<p>versus:</p>
+<blockquote>
+<p><em>"Is this the outbound integration messaging pipeline or the inbound decision update service controller?"</em></p>
+</blockquote>
+<p>The first takes one second to parse. The second takes five seconds and still leaves room for confusion. Named systems create shared vocabulary, build team ownership, and give new engineers an intuitive mental map they can orient around immediately. When you name a family of systems around a coherent theme, each new system inherits that orientability for free. A third pipeline in this family — something transactional, maybe, sitting between outbound and inbound — would naturally suggest itself as Odin: the consciousness at the center, making decisions based on what his ravens have told him.</p>
+<p>Invest in the name. It costs nothing and pays dividends in clarity for the life of the system.</p>
+<hr />
+<h2 id="problem-statement">Problem Statement</h2>
+<p>We need an inbound counterpart to Huginn. External lending institutions — underwriters, banks, credit bureaus, and fulfillment partners — send us data in the form of credit decisions, status changes, and responses. We need to receive that data, validate and translate it, and apply the updates back to our loan origination system of record.</p>
+<p>Core assumptions:</p>
+<ul>
+<li>Data <strong>already exists</strong> in our system of record; these are always <strong>updates</strong>, never creates. (Loan applications are created through a separate API layer.)</li>
+<li>Updates originate externally via HTTP push, polling, or event stream.</li>
+<li>The target record ID must be resolved from the inbound payload — external systems use their own identifiers.</li>
+<li>The first concrete use case is a single upstream lending institution sending credit decisions back to us. The system must scale to many more.</li>
+</ul>
+<p><strong>Goal:</strong> A paved road that the integrations team reaches for the same way they reach for Huginn for outbound — config-driven, per-client isolated, observable at every stage, and designed to last.</p>
+<hr />
+<h2 id="the-core-problem-governing-inbound-updates">The Core Problem: Governing Inbound Updates</h2>
+<p>Before getting into architecture, it is worth naming the fundamental challenge that makes inbound integrations hard.</p>
+<p>Outbound integrations have a natural owner: you. Your system of record is the source of truth, and you push derived data outward. The data ownership is unambiguous.</p>
+<p>Inbound integrations break that assumption. A third party wants to update fields in <em>your</em> system of record. The questions that follow are surprisingly difficult:</p>
+<ul>
+<li><strong>Which fields are they allowed to update?</strong> A field not in their allowlist should be unreachable, not just unenforced.</li>
+<li><strong>What if your system and their system both write the same field simultaneously?</strong> You have a race condition with no deterministic winner.</li>
+<li><strong>What if their update fails to apply?</strong> Does your system diverge silently from theirs?</li>
+<li><strong>What if they send the same update twice?</strong> Is your consumer idempotent?</li>
+<li><strong>What if the loan application they're updating was cancelled while they were reviewing it?</strong> Do you apply a credit decision to a dead record?</li>
+</ul>
+<p>These are the questions Muninn is designed to answer structurally, not operationally. The goal is to make the wrong thing impossible — or at least loudly visible — rather than relying on process to catch it.</p>
+<hr />
+<h2 id="conceptual-foundation-named-patterns">Conceptual Foundation — Named Patterns</h2>
+<p>This section establishes shared vocabulary grounded in well-known literature. Not all of these patterns are v1 scope — some are reference points for where the design is headed.</p>
+<h3 id="enterprise-integration-patterns-hohpe-woolf">Enterprise Integration Patterns (Hohpe &amp; Woolf)</h3>
+<p><strong>Pipes and Filters</strong> — Muninn's stage sequence (<code>Translate → Validate → IDResolve → Apply → Log</code>) is Pipes and Filters. Each stage is a filter; the canonical <code>InboundUpdate</code> model is the pipe. Stages are composable, replaceable, and testable in isolation. You can add a new stage — a fraud-signal enrichment step, say, or a duplicate detection layer — without touching any other stage's logic.</p>
+<p><strong>Message Translator</strong> — the Translate stage. Maps client-specific format to a canonical internal model. The essential first principle: normalize before you process. Enum mapping (e.g., a lender's <code>"APPROVED"</code> → internal <code>ApplicationStatus.APPROVED</code>) is translation, not validation. Validation operates on canonical values; translation produces them.</p>
+<p><strong>Canonical Data Model</strong> — the <code>InboundUpdate</code> model Muninn produces after translation. One internal representation all external formats converge to, making all downstream stages client-agnostic. A debate worth having: should this be an industry-standard wire format (e.g., a published JSON schema)?</p>
+<p>The answer is: at the transport boundary, yes — recommending a standardized schema to new clients signals maturity and reduces translation complexity. Internally, no. Standard wire formats carry structural overhead (envelopes, metadata, extensions) that adds no value once the message has been parsed. The internal model should be lean and domain-specific. Making a standard format mandatory would also exclude legacy clients — exactly the ones who most need a paved road.</p>
+<p><strong>Idempotent Receiver</strong> — the consumer must produce the same result regardless of how many times it receives the same message. Non-optional when at-least-once delivery is in play: HTTP retries guarantee re-delivery. This must be implemented correctly — see the Idempotency section below, which covers two common implementation mistakes and their fixes.</p>
+<p><strong>Transactional Inbox</strong> (Idempotent Receiver + Message Store) — persist the inbound message to durable storage <em>before</em> any processing. Enables crash recovery, idempotency enforcement, and replay. The "transactional" label is slightly misleading — see the dedicated Idempotency section for what this guarantee actually covers and where it doesn't.</p>
+<p><strong>Content-Based Router</strong> — Huginn routes outbound change events to per-client Kafka topics based on the content of the event (client identity, changed fields). This is how it achieves per-client isolation — and how Muninn prevents creating a feedback loop. See Loop Prevention.</p>
+<p><strong>Correlation Identifier</strong> — <code>eventId</code> + <code>objectId</code> in the audit service. Traces a single transaction across all systems: Muninn's ingestion log and Huginn's outbound log both index on the same <code>objectId</code>, enabling end-to-end correlation across inbound and outbound for any loan record.</p>
+<hr />
+<h3 id="designing-data-intensive-applications-kleppmann">Designing Data-Intensive Applications (Kleppmann)</h3>
+<p><strong>At-least-once delivery + idempotent consumer = effectively-once</strong> — HTTP retries guarantee at-least-once. The only correct response is to make the consumer idempotent. Without idempotency, a network retry causes a duplicate write. "We'll just make sure clients don't retry" is not an operational model.</p>
+<p><strong>Write skew</strong> — a lender reads their system state, generates a credit decision, sends it to us. If we've modified the same record since they read it, their decision is based on stale state. The practical mitigation is a client-provided sequence number. For the first integration specifically, the practical answer is a deliberate policy — <em>their value wins for the fields they own</em> — because they are the authoritative decision-maker for those fields. For future integrations with less clear field ownership, a sequence number is a hard requirement. The important thing is that this is <em>explicit policy</em>, not silent assumption.</p>
+<p><strong>Last-write-wins is unreliable</strong> — wall-clock timestamps do not work for conflict resolution across distributed systems. Clock skew and NTP drift mean two independently-timestamped events are not reliably ordered. Without explicit version numbers, last-write-wins is the de facto policy and must be explicitly acknowledged — not silently assumed — in the integration design document.</p>
+<p><strong>Event sourcing (adjacent pattern)</strong> — Muninn does not implement full event sourcing, but the transactional inbox with raw payload storage moves meaningfully in that direction. Every inbound event is persisted before processing — a durable log of what was received and when. This is enough to replay missed updates and reconstruct state for any record.</p>
+<hr />
+<h3 id="software-architecture-the-hard-parts-ford-richards-sadalage-dehghani">Software Architecture: The Hard Parts (Ford, Richards, Sadalage, Dehghani)</h3>
+<p><strong>Service granularity</strong> — per-client ECS services (the Huginn model) are the right granularity for isolation: independent deployability, independent scaling, independent fault domains. Muninn starts as a single multi-tenant service and evolves to per-client isolation incrementally, using the same deployment pattern.</p>
+<p><strong>Data domain ownership</strong> — "whoever owns the data owns the write." Field allowlists in YAML config are the implementation. A lending institution owns the fields they're the authoritative source for; they are granted write access to those fields and only those fields. Structural enforcement is better than process enforcement.</p>
+<p><strong>Orchestration vs. choreography</strong> — Muninn uses orchestration: a central pipeline coordinator calls each stage in sequence, handles failures at each step, and maintains a complete picture of the request. Choreography distributes control flow in a way that makes failures hard to trace. Since stages are inherently sequential and dependent — you cannot Apply before you IDResolve — orchestration is the natural fit. The observability service can then show exactly which stage failed and what the payload looked like at every step.</p>
+<hr />
+<h3 id="hexagonal-architecture-ports-and-adapters-cockburn-clean-architecture-martin">Hexagonal Architecture / Ports and Adapters (Cockburn; Clean Architecture — Martin)</h3>
+<p>The pipeline stages are the <strong>hexagon</strong> (domain logic). Transport mechanisms are pluggable <strong>adapters</strong> (ports). The domain only ever sees the canonical <code>InboundUpdate</code>, regardless of whether it arrived via HTTP, Kafka, polling, or flat file. This is what makes the sync/async config flag work: the transport adapter changes; the domain stages are identical.</p>
+<div class="highlight"><pre><span></span><code>┌───────────────────────────────────────────────┐
+│            Transport Adapters (Ports)         │
+│  [HTTP webhook]  [Polling job]  [Flat file]   │
+│            [Kafka consumer]                   │
+└────────────────────┬──────────────────────────┘
+                     │ canonical InboundUpdate
+┌────────────────────▼──────────────────────────┐
+│          Pipeline Stages (Domain)             │
+│  Translate → Validate → IDResolve             │
+│  → Apply → Log                                │
+└────────────────────┬──────────────────────────┘
+                     │
+┌────────────────────▼──────────────────────────┐
+│          Infrastructure Adapters              │
+│  [loan origination platform write-back]       │
+│  [observability / audit service]              │
+└───────────────────────────────────────────────┘
+</code></pre></div>
+<hr />
+<h3 id="a-philosophy-of-software-design-ousterhout">A Philosophy of Software Design (Ousterhout)</h3>
+<p><strong>Deep modules</strong> — each per-client Translator has a simple interface (<code>translate(rawPayload) → InboundUpdate</code>) and complex internals that hide client-specific parsing. Complexity at the leaf, simplicity at the seam. The pipeline stages never know they're handling SOAP/XML from a 1990s mainframe — the Translator took care of it.</p>
+<p><strong>Define errors out of existence</strong> — the field allowlist makes certain error classes structurally impossible. If a client's allowlist does not include <code>disbursementDate</code>, the <code>disbursementDate</code> race condition cannot occur. No code needed to handle what cannot happen.</p>
+<p><strong>Complexity is the enemy</strong> — every abstraction layer adds cognitive overhead for every engineer who will maintain this system. This principle applies to the meta-question of whether to build Muninn at all for v1 — see Option D below.</p>
+<hr />
+<h2 id="partner-delta-the-cautionary-tale">Partner Delta — The Cautionary Tale</h2>
+<p>Before describing what Muninn <em>is</em>, it is worth understanding what it is designed to prevent — a real integration failure that shaped every decision here.</p>
+<p>Partner Delta was a bidirectional synchronization integration between the loan origination platform and an external loan management system operated by a major financial institution. It became a cautionary tale not because the engineers were careless, but because the integration was specced incorrectly from the start — and the code faithfully implemented a bad spec.</p>
+<h3 id="what-it-was-two-separate-flows-with-no-coordination">What it was: two separate flows with no coordination</h3>
+<p><strong>Outbound:</strong> Nine or more Huginn pipelines firing every time a loan application was submitted or updated — pushing application status, loan amounts, dates, applicant information, product codes, terms, lender and broker details to the external system.</p>
+<p><strong>Inbound:</strong> A manual pull. A user in the loan management UI would click "Refresh," which triggered a third-party case retrieval call → a bidirectional reconciliation service → which then overwrote nearly the same set of fields back into our system: application status, amounts, dates, applicant data, product codes, terms, and lender info.</p>
+<p>These were the <em>exact same fields</em> the nine outbound pipelines were constantly pushing <em>to</em> Partner Delta. Both systems wrote everything. Neither owned anything.</p>
+<h3 id="what-this-produced">What this produced</h3>
+<p>The codebase became an 800-line reconciliation service with no stage boundaries, six or more feature flags patching edge cases the original design never anticipated, validation bypassed via undocumented runtime flags, and optimistic locking exceptions requiring a dedicated retry mechanism — because concurrent writes from the outbound pipeline and the inbound pull would frequently collide on the same record.</p>
+<p>Every debugging session started from scratch because there were no named stages to isolate. Nobody could confidently answer "what is the validation contract?" because it was spread across runtime flags and conditionals. Failures were mysterious because there was no per-stage observability.</p>
+<h3 id="the-two-layers-of-complexity">The two layers of complexity</h3>
+<p><em>Accidental complexity</em> — things a well-designed framework like Muninn would fix:</p>
+<ul>
+<li>No stage boundaries meant every debugging session required reading the entire flow</li>
+<li>Feature flags as workarounds meant the effective validation contract existed nowhere explicitly</li>
+<li>No per-stage observability meant failures were mysterious and reproduction was unreliable</li>
+</ul>
+<p><em>Essential complexity</em> — things no framework can fix:</p>
+<p>If both systems can write the same fields, you have a distributed consistency problem. Muninn makes governance visible and structurally enforceable, but it cannot substitute for governance itself. The matching logic that mapped external loan references to internal records had three fallback strategies and still created duplicate records when all three failed — because the fundamental specification asked for something inherently difficult.</p>
+<h3 id="the-real-lesson">The real lesson</h3>
+<p>The root cause was a spec that said "keep both systems perfectly in sync on everything" rather than "each system owns specific fields." That spec would have been painful to implement in any framework.</p>
+<p>Muninn enforces field ownership structurally via the YAML allowlist — the act of filling in that config forces the question that was never asked with Partner Delta: <em>"should this client really be allowed to write this field?"</em></p>
+<blockquote>
+<p>Every field a client can update in their system that also lives in ours is a field we must coordinate writes on across two distributed systems. The fewer shared writable fields, the more reliable both systems are. Ideally, each system is the sole authoritative writer for the fields it owns.</p>
+</blockquote>
+<p><strong>The single-writer rule:</strong> For every field involved in an integration, there should be exactly one authoritative writer. The first integration Muninn serves is designed correctly: the lender's credit decision fields (<code>applicationStatus</code>, <code>lenderReferenceId</code>, <code>decisionReason</code>) are set exclusively via Muninn and are not editable from within the platform UI. There is no race possible because our system never independently writes those fields.</p>
+<hr />
+<h2 id="recommended-client-integration-profile">Recommended Client Integration Profile</h2>
+<p>This section captures the principled starting point for conversations with new integration clients. Lead with the ideal; negotiate down only where the client's system genuinely cannot accommodate it; document every deviation explicitly.</p>
+<p>Muninn is flexible — it handles custom JSON, SOAP/XML, flat files, polling, and async or synchronous flows. That flexibility has a cost: the further a client deviates from the ideal, the more translation complexity Muninn must absorb and the more operational risk the integration carries.</p>
+<h3 id="required-non-negotiable">✅ Required — non-negotiable</h3>
+<p><strong>1. HTTPS + OAuth2 Client Credentials</strong></p>
+<p>Every client gets an OAuth2 application client (client ID + secret). All calls to Muninn must include a valid JWT. This is how we know who is calling, enforce per-client rate limits, and stamp <code>updatedBy</code> correctly for loop prevention. There is no alternative auth mechanism.</p>
+<p><strong>2. Field ownership agreement before go-live</strong></p>
+<p>Before a single line of code is written, agree in writing: <em>which fields does this client own?</em> Their system is the authoritative writer for those fields; ours is not. Our outbound pipeline must not include those fields going the other direction. This is the single most important safeguard against recreating the Partner Delta failure mode. No go-live without it.</p>
+<h3 id="strongly-recommended">🟢 Strongly recommended</h3>
+<p><strong>3. A unique message ID on every payload</strong></p>
+<p>The client generates a UUID for each inbound event and includes it in every payload. This is the key for Muninn's idempotency mechanism — if the same message arrives twice (network retry, duplicate send), Muninn returns the same cached response without reprocessing. Without a message ID, idempotency must fall back to a composite key (<code>clientId + recordId + statusValue + timestamp</code>), which is less reliable and can fail for byte-identical re-sends of genuinely distinct events. Push for this — it is easy for any modern system to implement.</p>
+<p><strong>4. Minimum field surface — single-system mutability where possible</strong></p>
+<p>Send only the fields the client is the authoritative source for. Not a full record sync. Every additional shared writable field is a coordination problem — the direct lesson from Partner Delta. Beyond minimizing field count, push for <em>single-system mutability</em>: the cleanest integration is one where the fields a client sends are <em>not editable from within our system at all</em>. This eliminates race conditions structurally rather than operationally.</p>
+<p><strong>5. Sequence number for conflict detection</strong></p>
+<p>If the client's system maintains a version or sequence number on its records, include it in the payload. Allows Muninn to detect write skew — if our record has advanced beyond the version the client based their update on, we surface the conflict rather than silently applying a stale update. For clients that cannot provide this, document that last-write-wins is the accepted policy.</p>
+<h3 id="recommended">🟡 Recommended</h3>
+<p><strong>6. Standardized JSON over HTTPS</strong> — prefer a well-documented JSON schema agreed upon at integration design time. Prefer REST over SOAP. Prefer push over polling. Flat file delivery (SFTP, S3) is a last resort — it introduces polling complexity, latency, and provides no natural idempotency mechanism.</p>
+<p><strong>7. Async response (202 + callback or status polling)</strong> — decouples the client's send operation from processing time, absorbs burst traffic, and does not hold HTTP connections open during multi-step internal processing. Some clients require synchronous 200 — a real business constraint that Muninn supports via YAML config. For clients without this constraint, async is significantly more resilient.</p>
+<p><strong>8. Retry with exponential backoff using the same message ID</strong> — on error, retry with the original <code>messageId</code>, never a new one. A new message ID on a retry defeats idempotency: Muninn sees it as a new event and reprocesses.</p>
+<h3 id="deviation-handling">Deviation handling</h3>
+<p>When a client cannot meet a recommendation: document (1) which recommendation was declined and why, (2) the accepted risk, (3) what mitigation is in place. No integration goes live with silent assumptions.</p>
+<hr />
+<h2 id="the-v1-question-does-muninn-need-to-exist-now">The v1 Question — Does Muninn Need to Exist Now?</h2>
+<p>Ousterhout's principle at the meta level: <em>no abstraction without present-tense justification.</em></p>
+<p>The first concrete integration request is a single upstream lender, low volume, sending two fields back — a credit decision status and a reference number. A legacy inbound controller already handles exactly this pattern for a small number of existing clients in production. Adding one more implementation is a morning's work.</p>
+<p>The tension: designing the right platform now prevents recreating Partner Delta. But future client requirements are unclear. Building a new platform service before the second and third client specs are firm risks building the wrong abstraction.</p>
+<p>This produces Option D:</p>
+<h3 id="option-d-ship-the-first-integration-via-the-legacy-path-now-build-muninn-when-the-second-spec-is-firm">Option D — Ship the first integration via the legacy path now; build Muninn when the second spec is firm</h3>
+<p>Extend the legacy inbound controller with the new client as an additional implementation. Build Muninn properly once upcoming clients have concrete requirements to design against.</p>
+<p><strong>Pros:</strong> Ships in hours. Proven write-back path. Buys time for requirements to firm up. The organization gains real inbound integration experience to inform what Muninn should be.</p>
+<p><strong>Cons:</strong> Adds another client to the pattern we are trying to replace, creating migration debt. Misses the window to design Muninn while this first client is the primary forcing function. Field allowlist remains hardcoded per-vendor rather than config-driven.</p>
+<p><strong>When D is right:</strong> Upcoming client specs are months away and the first client has a hard near-term deadline.<br />
+<strong>When D is wrong:</strong> There is real urgency around establishing the platform pattern now, or upcoming specs are closer than they appear.</p>
+<p>The platform design work captured in this document is valuable regardless — it informs what Muninn will look like whenever it is built.</p>
+<hr />
+<h2 id="failure-mode-coverage">Failure Mode Coverage</h2>
+<table>
+<thead>
+<tr>
+<th>Failure Mode</th>
+<th>How Muninn Addresses It</th>
+<th>Remaining Gap</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Validation gaps</strong></td>
+<td>Layered validation: Muninn validates format/fields; domain backend validates business rules</td>
+<td>Error response quality — when the backend rejects an update, does the client get a meaningful field-level error or an opaque 500?</td>
+</tr>
+<tr>
+<td><strong>Race conditions</strong></td>
+<td><code>skipUpdateIds</code>/<code>updatedBy</code> mechanism prevents the Muninn→Huginn→back feedback loop</td>
+<td>Concurrent internal edits + inbound updates on the same field — no coordination beyond field ownership agreements</td>
+</tr>
+<tr>
+<td><strong>Unhappy paths</strong></td>
+<td>Per-stage status tracking in the observability service</td>
+<td>If Apply fails and the error is not surfaced clearly, the client believes the update applied when it did not. Strong structured error responses mitigate this; an operational runbook is still needed.</td>
+</tr>
+<tr>
+<td><strong>Conflict resolution</strong></td>
+<td>Deliberate policy per integration</td>
+<td>For authoritative-decision clients: "their value wins." For future bidirectional integrations: requires sequence number or optimistic locking agreement.</td>
+</tr>
+<tr>
+<td><strong>Deletion / tombstoning</strong></td>
+<td>Addressed in IDResolve</td>
+<td>IDResolve checks whether the target record is still in an active state before passing to Apply. If the loan application is cancelled or closed, return a structured error rather than applying a decision to a dead record.</td>
+</tr>
+<tr>
+<td><strong>Partial update clobber</strong></td>
+<td>YAML field allowlist — structurally enforced</td>
+<td>Enforcement must be strict at the Apply boundary, not advisory</td>
+</tr>
+<tr>
+<td><strong>Idempotency failures</strong></td>
+<td>Transactional inbox design (see below)</td>
+<td>Requires client-provided message IDs; falls back to composite key with reduced reliability</td>
+</tr>
+<tr>
+<td><strong>Audit trail gaps</strong></td>
+<td>Observability service per-stage logs; raw payload stored before translation</td>
+<td>Muninn and Huginn both index on the same record identifier — end-to-end correlation across inbound and outbound pipelines is possible for any loan record</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="idempotency-and-the-transactional-inbox">Idempotency and the Transactional Inbox</h2>
+<h3 id="the-pattern">The pattern</h3>
+<p>The first thing Muninn does on receiving any inbound message — before parsing, translating, or touching the domain backend — is persist the raw payload to a durable store with an idempotency key and status <code>RECEIVED</code>. If the service crashes mid-processing, the message is recoverable. If the same message arrives twice, the second instance finds the first record and returns the same cached response without reprocessing.</p>
+<h3 id="mistake-1-content-hash-idempotency-has-the-wrong-semantics-for-status-updates">Mistake 1: Content-hash idempotency has the wrong semantics for status updates</h3>
+<p>SHA-256(payload) works for idempotency on, say, a loan application submission because submitting the same application twice <em>is</em> a semantic duplicate — the payload is its own identity. Status updates are different. A lender can legitimately send <code>applicationStatus=APPROVED</code> for one loan and later send a byte-identical payload for a different loan that was also approved. A content hash silently drops the second update as a duplicate.</p>
+<p><strong>The fix:</strong> Require all clients to include a unique <code>messageId</code> (UUID or similar) in every payload. Key the idempotency record on <code>(clientId + messageId)</code>. The <code>messageId</code> (have we seen this event before?) is conceptually separate from the object identifier (the loan reference number, internal record ID — what to update). Both are required; they serve different purposes.</p>
+<p>Fallback if a client cannot provide a stable message ID: composite key of fields that together form a natural event identity (<code>clientId + recordId + statusValue + clientTimestamp</code>). Worse than a proper message ID but better than a content hash.</p>
+<h3 id="mistake-2-the-processing-status-creates-a-liveness-bug">Mistake 2: The PROCESSING status creates a liveness bug</h3>
+<p>The naive flow is: mark <code>PROCESSING</code> → do work → mark <code>COMPLETE</code>. But the domain backend write and the <code>COMPLETE</code> update to the observability service are two separate network calls with no atomicity guarantee. If the domain write succeeds but the <code>COMPLETE</code> update fails, the record is permanently wedged in <code>PROCESSING</code>. Every subsequent retry from the client returns "still processing" forever — even though the update already applied. This is the opposite of idempotent.</p>
+<p><strong>The fix:</strong> <code>PROCESSING</code> records need a lease expiry. After N minutes in <code>PROCESSING</code> without a <code>COMPLETE</code> or <code>FAILED</code> update, a background reconciliation job treats the record as potentially failed, checks the domain backend's current state, and patches the correct terminal status.</p>
+<p>The correct mental model: <em>durable receipt</em> (the <code>RECEIVED</code> write) is atomic and crash-safe. <em>Processing</em> is at-least-once delivery with idempotent application. These are different guarantees and should be reasoned about separately.</p>
+<p><strong>Critically:</strong> do not return <code>409 Conflict</code> when a duplicate request arrives while the original is still in <code>PROCESSING</code>. A 409 violates the idempotency contract — the client has no way to distinguish "your request failed" from "your request is already being processed." Return <code>200</code> with a <code>Retry-After</code> header instead.</p>
+<h3 id="corrected-idempotency-flow">Corrected idempotency flow</h3>
+<pre class="mermaid"><code>sequenceDiagram
+    participant Client as Lending Institution
+    participant Muninn
+    participant Audit as Audit Service
+    participant Backend as Loan Origination Backend
+
+    Client-&gt;&gt;Muninn: POST /inbound/decision {messageId, payload}
+    Muninn-&gt;&gt;Muninn: key = clientId + messageId
+    Muninn-&gt;&gt;Audit: GET /idempotency/{key}
+
+    alt Record found, status=COMPLETE
+        Audit--&gt;&gt;Muninn: cached execution record
+        Muninn--&gt;&gt;Client: 200 (same response as original — true idempotency)
+    else Record found, status=PROCESSING, lease valid
+        Audit--&gt;&gt;Muninn: in-flight record
+        Muninn--&gt;&gt;Client: 200 "processing" + Retry-After header
+    else Record found, status=PROCESSING, lease expired
+        Muninn-&gt;&gt;Muninn: reconcile against backend state
+        Muninn-&gt;&gt;Audit: PATCH correct terminal status
+        Muninn--&gt;&gt;Client: reprocess or return cached result
+    else No record found (new request)
+        Muninn-&gt;&gt;Audit: POST {RECEIVED, key, requestPayload=rawPayload}
+        Muninn-&gt;&gt;Muninn: Translate → Validate → IDResolve
+        Muninn-&gt;&gt;Audit: PATCH status=PROCESSING + leaseExpiry
+        Muninn-&gt;&gt;Backend: apply field update (updatedBy=clientId)
+        Backend--&gt;&gt;Muninn: 200
+        Muninn-&gt;&gt;Audit: PATCH status=COMPLETE, responsePayload
+        Muninn--&gt;&gt;Client: 200 confirmed
+    end</code></pre>
+<h3 id="what-needs-to-change-in-the-audit-service">What needs to change in the audit service</h3>
+<p>Add only what cannot be derived from existing data — this is shared DynamoDB infrastructure.</p>
+<p><strong>Genuinely necessary:</strong></p>
+<ul>
+<li>New field: <code>idempotencyKey</code> (<code>clientId + messageId</code>) — needed for fast O(1) lookup; cannot be derived</li>
+<li>New DynamoDB GSI: idempotencyKey (PK) + dateCreated (SK)</li>
+<li>New status enum value: <code>RECEIVED</code> — distinguishes "message durably persisted" from "message being processed"</li>
+<li>New endpoint: <code>GET /executions/idempotency/{key}</code></li>
+</ul>
+<p><strong>Not needed:</strong> A separate raw payload field (write to the existing <code>requestPayload</code> field before translation); a TTL field (the lease window is derivable from <code>dateCreated</code> + a configured threshold).</p>
+<hr />
+<h2 id="architecture-options">Architecture Options</h2>
+<h3 id="option-a-muninn-as-huginn-mirror">Option A — Muninn as Huginn Mirror</h3>
+<p>Per-client ECS service isolation, per-client API Gateway paths, same config-driven deployment pattern as Huginn. True runtime isolation from day one.</p>
+<pre class="mermaid"><code>graph TD
+    LenderA["Lender A"]
+    LenderB["Lender B (future)"]
+    GW["API Gateway"]
+    ECS_A["Muninn Lender A ECS"]
+    ECS_B["Muninn Lender B ECS"]
+    LenderA --&gt;|"/muninn/lender-a/decision"| GW
+    LenderB --&gt;|"/muninn/lender-b/decision"| GW
+    GW --&gt; ECS_A
+    GW --&gt; ECS_B
+    subgraph Pipeline["Same code, different YAML per service"]
+        T["Translate"] --&gt; V["Validate"] --&gt; I["IDResolve"] --&gt; A["Apply"] --&gt; L["Log"]
+    end
+    ECS_A --&gt; T
+    ECS_B --&gt; T</code></pre>
+<p><strong>When to choose A:</strong> Multiple clients with firm requirements and a need for isolation from day one.</p>
+<hr />
+<h3 id="option-b-gateway-kafka-per-client-consumers">Option B — Gateway + Kafka + Per-Client Consumers</h3>
+<p>Thin HTTP gateway accepts all clients, drops to per-client Kafka topics, per-client consumer services process independently.</p>
+<pre class="mermaid"><code>graph TD
+    Clients["All Lending Institutions"]
+    GW["Muninn Inbound Gateway"]
+    K1["Kafka: inbound-lender-a"]
+    K2["Kafka: inbound-lender-b"]
+    C1["Muninn Lender A Consumer ECS"]
+    C2["Muninn Lender B Consumer ECS"]
+    Backend["Loan Origination Backend"]
+    Clients --&gt;|"POST /inbound/{clientId}/decision"| GW
+    GW --&gt;|"202 + trackingId"| Clients
+    GW --&gt; K1
+    GW --&gt; K2
+    K1 --&gt; C1
+    K2 --&gt; C2
+    C1 --&gt;|"Translate→Validate→Apply"| Backend
+    C2 --&gt;|"Translate→Validate→Apply"| Backend</code></pre>
+<p>Best isolation model and natural fit for async. The problem: if the first client requires a synchronous 200 response, request-reply over Kafka requires a response correlation mechanism that adds significant complexity. This rules out Option B when synchronous response is a hard client requirement — which it is for at least the first client.</p>
+<hr />
+<h3 id="option-c-sync-first-single-service-recommended-for-v1">Option C — Sync-First, Single Service <em>(recommended for v1)</em></h3>
+<p>Single Muninn service, per-client YAML config loaded at runtime, synchronous by default, async configurable. Evolves to per-client isolation incrementally.</p>
+<pre class="mermaid"><code>graph TD
+    Clients["All Lending Institutions"]
+    GW["API Gateway"]
+    Muninn["Muninn Service (single multi-tenant)\nper-client YAML config"]
+    Audit["Audit Service"]
+    Backend["Loan Origination Backend"]
+    Clients --&gt; GW --&gt; Muninn
+    Muninn --&gt;|"1. receipt write (RECEIVED)"| Audit
+    Muninn --&gt;|"Translate → Validate → IDResolve → Apply → Log"| Backend
+    Muninn --&gt;|"3. status update (COMPLETE)"| Audit
+    Muninn --&gt;|"200 sync or 202 async"| Clients</code></pre>
+<p><strong>How the sync/async config flag works:</strong> For synchronous clients, the service accepts the HTTP call, processes inline, and returns 200. For async clients, three mechanisms are available depending on where you want the durability guarantee to sit:</p>
+<ol>
+<li><strong>Internal async thread</strong> — simple, recovery via <code>RECEIVED</code> record in the audit service</li>
+<li><strong>API Gateway → SQS → Muninn SQS consumer</strong> — durable and operationally clean</li>
+<li><strong>Muninn HTTP → per-client Kafka → per-client consumer</strong> — this is Option B reached incrementally</li>
+</ol>
+<p><strong>Why Option C is the recommended starting point:</strong> Lowest time to first integration, serves synchronous requirements natively, and runtime isolation for a single low-volume client is a non-issue. Adding per-client ECS isolation later is a deployment configuration change, not a code change.</p>
+<hr />
+<h3 id="option-d-ship-on-the-legacy-path-now-build-muninn-when-the-second-spec-is-firm">Option D — Ship on the Legacy Path Now; Build Muninn When the Second Spec Is Firm</h3>
+<p>Extend the legacy inbound controller with the new client as an additional implementation. Covered in the v1 Question section above.</p>
+<hr />
+<h3 id="comparison">Comparison</h3>
+<table>
+<thead>
+<tr>
+<th>Criterion</th>
+<th>A (Mirror Huginn)</th>
+<th>B (Gateway+Kafka)</th>
+<th>C (Sync-first) ✓</th>
+<th>D (Extend legacy)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Synchronous response support</td>
+<td>✓</td>
+<td>✗ without request-reply</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Runtime isolation</td>
+<td>✓ per-client ECS</td>
+<td>✓ per-client Kafka</td>
+<td>Shared; upgradeable</td>
+<td>✗ shared monolith</td>
+</tr>
+<tr>
+<td>Async/polling extensibility</td>
+<td>✓ via config</td>
+<td>✓ natively</td>
+<td>✓ via config</td>
+<td>✗</td>
+</tr>
+<tr>
+<td>Infrastructure complexity</td>
+<td>Medium</td>
+<td>High</td>
+<td>Low → Medium</td>
+<td>Very low</td>
+</tr>
+<tr>
+<td>Time to first client</td>
+<td>Medium</td>
+<td>High</td>
+<td><strong>Low</strong></td>
+<td><strong>Lowest</strong></td>
+</tr>
+<tr>
+<td>Scales to 10+ clients</td>
+<td>✓</td>
+<td>✓</td>
+<td>Upgrade required</td>
+<td>✗ cements old pattern</td>
+</tr>
+<tr>
+<td>Proper idempotency</td>
+<td>✓ with inbox</td>
+<td>✓</td>
+<td>✓</td>
+<td>✗</td>
+</tr>
+<tr>
+<td>Ousterhout justified?</td>
+<td>If 2+ specs are firm</td>
+<td>If 2+ specs are firm</td>
+<td>If 2+ specs are firm</td>
+<td>✓ for one simple client</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Decision driver:</strong> Are second and third client specs concrete enough to design against? If yes, build Muninn (Option C). If no, ship the first client via Option D and design Muninn properly when the second client is real.</p>
+<hr />
+<h2 id="implementation-details">Implementation Details</h2>
+<h3 id="write-back-options">Write-Back Options</h3>
+<p>The most consequential implementation decision is what Muninn calls in the domain backend to apply field updates.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Status support</th>
+<th>Validation</th>
+<th>Side effects</th>
+<th>Audit log</th>
+<th>Work</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>W1</strong> Legacy controller path</td>
+<td>✓</td>
+<td>Domain (partial)</td>
+<td>✗</td>
+<td>Legacy (yes)</td>
+<td>Minor</td>
+</tr>
+<tr>
+<td><strong>W1.5</strong> Extend legacy controller</td>
+<td>✓</td>
+<td>Domain (partial)</td>
+<td>✗</td>
+<td>Legacy (double)</td>
+<td>Minor</td>
+</tr>
+<tr>
+<td><strong>W2</strong> Lightweight callback</td>
+<td>✗</td>
+<td>None</td>
+<td>✗</td>
+<td>No</td>
+<td>None</td>
+</tr>
+<tr>
+<td><strong>W3</strong> Full PATCH endpoint</td>
+<td>✓</td>
+<td>Full</td>
+<td>✓ rule engine</td>
+<td>No</td>
+<td>None</td>
+</tr>
+<tr>
+<td><strong>W4</strong> Structured command path</td>
+<td>?</td>
+<td>Domain (partial)</td>
+<td>Partial</td>
+<td>No</td>
+<td>None</td>
+</tr>
+<tr>
+<td><strong>W5</strong> New dedicated endpoint</td>
+<td>✓</td>
+<td>Explicit flags</td>
+<td>✗</td>
+<td>No (Muninn owns)</td>
+<td>Moderate</td>
+</tr>
+</tbody>
+</table>
+<p><strong>W1</strong> is the pragmatic v1 choice — proven in production, supports all needed fields, correct aggregation behavior.</p>
+<p><strong>W2</strong> only supports a reference number field, not application status. Do not extend it field-by-field; it bypasses the domain update machinery.</p>
+<p><strong>W3</strong> triggers the full domain update pipeline including rule execution and outreach events — too many side effects for a governed inbound update. Iris writing a credit decision should not trigger loan officer notifications or automated re-qualification rules.</p>
+<p><strong>W1.5</strong> — extending the legacy controller with a generic field-patch path — inherits the legacy audit log (duplicating what Muninn's own observability already captures), the legacy controller's built-in retry logic (conflicting with Muninn's own retry), and grows the legacy controller to handle two distinct paradigms.</p>
+<p><strong>W5</strong> is the clean long-term choice: a dedicated endpoint that accepts exactly what Muninn constructs, with explicit flags (rule execution disabled, <code>updatedBy</code> stamped), field-level error responses, and no legacy audit log double-write.</p>
+<p><strong>How the Apply stage works:</strong> Muninn sends a <em>field-patch command</em> to the domain backend — just the fields to update and the target record ID. The backend fetches the record internally, applies the updates, and calls the domain update service with the appropriate flags. Muninn does NOT fetch the record, mutate it in memory, and send it back — that risks stale overwrites from the time gap between IDResolve and Apply. Muninn does read the record during IDResolve (for scope checks and tombstone detection), but that read is separate from the write path.</p>
+<hr />
+<h3 id="pipeline-stage-design">Pipeline Stage Design</h3>
+<div class="highlight"><pre><span></span><code>[Idempotency check] → Translate → Validate → IDResolve → Apply → Log
+</code></pre></div>
+<p>The idempotency check runs <strong>before the pipeline starts</strong>, not inside Validate. On receipt, Muninn generates the idempotency key, writes <code>RECEIVED</code> to the audit service, and checks for a prior execution. Only if no prior execution is found does the pipeline proceed.</p>
+<p><strong>Translate</strong> — maps client-specific format to canonical <code>InboundUpdate</code>. Includes enum mapping. Translation is normalization, not validation. Per-client, YAML-configured translator class.</p>
+<p><strong>Validate</strong> — checks the canonical <code>InboundUpdate</code> against the field allowlist, required fields, and value constraints. Values are already canonical at this stage; Validate never needs to know what client sent them.</p>
+<p><strong>IDResolve</strong> — maps external identifiers (lender's reference number, external loan ID) to internal record IDs. Three checks in sequence:</p>
+<ol>
+<li>Does the external ID resolve to a record?</li>
+<li>Is that record within the calling client's authorized scope? (The field allowlist is not the same as tenant isolation — a malformed payload could resolve to a different client's record.)</li>
+<li>Is the record still in an active state? (Tombstone check.)</li>
+</ol>
+<p><strong>Apply</strong> — calls the domain backend write-back (W1 for v1, W5 long-term). Stamps <code>updatedBy = clientId</code> for loop prevention. Returns structured success/error.</p>
+<p><strong>Log</strong> — writes the execution record to the audit service at each stage transition. PII-scrubbed before writing.</p>
+<div class="highlight"><pre><span></span><code>                   ┌─────────────────────────────────────────────────────────┐
+                   │                  Muninn Pipeline                        │
+ Raw Payload ──► [Idempotency] ──► [Translate] ──► [Validate] ──►           │
+                   │                                                          │
+                   │          ──► [IDResolve] ──► [Apply] ──► [Log] ──► 200  │
+                   │                                │                         │
+                   │                          ◄─ error?                       │
+                   └─────────────────────────────────────────────────────────┘
+                                     ▼ at every stage
+                              [Audit Service write]
+</code></pre></div>
+<hr />
+<h3 id="validation-and-transformation-engine">Validation and Transformation Engine</h3>
+<p>The Translate and Validate stages expose simple contracts:</p>
+<ul>
+<li><code>Translator.translate(rawPayload) → InboundUpdate</code></li>
+<li><code>Validator.validate(InboundUpdate) → ValidationResult</code></li>
+</ul>
+<p>The pipeline is agnostic to what backs those contracts. Don't mix backing technologies within a single client's pipeline — it creates operational confusion about which layer "owns" a validation failure.</p>
+<p><strong>BPMN vs DMN:</strong> BPMN models workflows — branching, parallel paths, human tasks. Not relevant for Muninn; the pipeline is an intentionally linear, orchestrated sequence. DMN models decisions — structured tables of input conditions → output values. DMN is relevant for client-specific rules complex enough to warrant a decision table rather than code.</p>
+<p><strong>Recommended hierarchy:</strong></p>
+<ol>
+<li><strong>YAML config</strong> — field allowlists, enum values, required fields. Zero dependencies. Most clients need nothing beyond this.</li>
+<li><strong>Hardcoded translator class</strong> — for clients with non-trivial payload structures (SOAP/XML, deeply nested JSON). Complexity hidden behind a simple interface — the canonical deep module.</li>
+<li><strong>DMN decision tables</strong> — for complex conditional logic that business stakeholders need to read and modify without engineering deployments. GUI tooling, stored as <code>.dmn</code> files in the repo, versioned alongside the code that loads them.</li>
+</ol>
+<p>Drools is not recommended for new systems — the tooling is effectively in maintenance mode, the DSL has a real learning curve, and the Excel-to-Drools compilation pipeline is fragile. DMN is the modern successor for table-based decision logic.</p>
+<p><strong>Validation tiers:</strong></p>
+<ul>
+<li><strong>V1 YAML allowlist (default):</strong> Simple, config-driven, no code per client</li>
+<li><strong>V2 DMN tables:</strong> Standard notation, GUI tooling, business-readable, deploy-independent rule changes</li>
+<li><strong>V3 Delegate entirely to domain backend:</strong> No duplication, but validation errors come back as opaque HTTP errors</li>
+<li><strong>V4 Layered validation (recommended):</strong> Muninn handles structural validation; the domain backend handles business rule validation. Different concerns, not duplication. When the backend rejects, Muninn must translate to a structured, client-readable error response.</li>
+</ul>
+<hr />
+<h2 id="loop-prevention">Loop Prevention</h2>
+<p>When Muninn writes to the domain backend, that write produces a change event that the outbound routing service evaluates. Without prevention, this would trigger Huginn to deliver that change back to the lending institution — which would then re-trigger Muninn, creating a feedback loop.</p>
+<p>The solution: stamp <code>updatedBy = clientId</code> on every Muninn write, and configure the outbound routing service with a per-client <code>skipUpdateIds</code> list:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">lender-a</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">skipUpdateIds</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;lender-a-oauth-client-id&gt;</span>
+<span class="w">  </span><span class="nt">forwardingTopics</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">outbound-lender-a.process</span>
+</code></pre></div>
+<p>When the routing service sees a change event with <code>updatedBy</code> in <code>skipUpdateIds</code>, it skips forwarding that event to the lender's Huginn topic.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant Muninn
+    participant Backend as Loan Origination Backend
+    participant Router as Outbound Routing Service
+    participant Huginn
+    Muninn-&gt;&gt;Backend: write applicationStatus=APPROVED (updatedBy="lender-a-id")
+    Backend-&gt;&gt;Router: change event {updatedBy: "lender-a-id"}
+    Router-&gt;&gt;Router: skipUpdateIds.contains("lender-a-id") → TRUE → SKIP
+    Note over Huginn: Never receives this event. No loop.</code></pre>
+<p>An important nuance: <code>skipUpdateIds</code> only prevents the <em>immediate</em> loop. It does not prevent Huginn from firing for a <em>different</em> field change on the same record and including a contested field in that outbound payload. This is why field ownership agreements and single-system mutability are so important — if the lender owns a field and our platform never independently writes it, there is no contested field to worry about.</p>
+<hr />
+<h2 id="deployment-strategy">Deployment Strategy</h2>
+<p>One YAML config per ECS service, per-client deployment entry. This pattern scales well — Huginn runs several dozen integrations this way. For Muninn with per-client HTTP routing, every new client also needs an API Gateway entry.</p>
+<p>Option C (single multi-tenant service) defers this friction until a specific client's volume justifies dedicated isolation. The right time to add per-client ECS is when a concrete isolation trigger can be defined — request rate threshold, contract requirement, payload volume — not ad hoc. "We should give them their own service eventually" is not a concrete trigger.</p>
+<p>Muninn belongs as a new module in the integration services monorepo, alongside Huginn. Shared deployment patterns, Kafka infrastructure, and audit service client are all reasons to co-locate them.</p>
+<hr />
+<h2 id="open-questions">Open Questions</h2>
+<p>These are the questions I would want answered before writing the first line of implementation:</p>
+<ol>
+<li>
+<p><strong>Outbound pipeline field exclusion:</strong> Confirm that credit decision fields owned by upstream lenders are not included in Huginn outbound payloads before the lender has set them. Sending a null decision status in an outbound payload to the lender who is about to set it is confusing and potentially a source of silent data corruption on their side.</p>
+</li>
+<li>
+<p><strong>Client message ID requirement:</strong> Does the first client's payload include a stable unique event ID? If not, push back before implementation. Content-hash keying is not safe for status updates. This is worth a conversation now, not a surprise during integration testing.</p>
+</li>
+<li>
+<p><strong>Write-back path long-term:</strong> Is there appetite for a new dedicated write-back endpoint (W5) that eliminates the legacy audit log double-write and conflicting retry layers? This is the right long-term design and the implementation cost is moderate, not high.</p>
+</li>
+<li>
+<p><strong>Record scope validation:</strong> What is the authoritative source for "this loan record belongs to this client"? OAuth client ID to integration mapping in config? Database join to a client registry? This needs explicit design before implementation — IDResolve depends on it.</p>
+</li>
+<li>
+<p><strong>DLQ operational model:</strong> Who gets alerted when a Muninn execution hits <code>FAILED</code>? What is the resolution workflow? A failed inbound update may mean a credit decision was not applied — this has business implications that need an owner.</p>
+</li>
+</ol>
+<hr />
+<h2 id="key-takeaways">Key Takeaways</h2>
+<p><strong>The single-writer rule is the most important safeguard.</strong> Every field involved in an integration should have exactly one authoritative writer. Violating this creates distributed consistency problems that no framework can fix — the framework can make governance visible and structurally enforceable, but it cannot substitute for the governance itself. Get the field ownership agreements signed before writing a line of code. The Partner Delta integration was a cautionary tale not of bad engineering but of a bad spec, faithfully implemented.</p>
+<p><strong>Idempotency requires a client-provided identity, not a content hash.</strong> Content-hash idempotency is seductive because it requires nothing from the client. But status updates are not like resource submissions — a byte-identical payload can represent two genuinely distinct events. Push every client for a <code>messageId</code> on every payload. The operational reliability difference is significant and the implementation cost is near-zero for any modern system.</p>
+<p><strong>The transactional inbox is not truly transactional.</strong> The raw payload write is atomic and crash-safe. But the domain backend write and the COMPLETE status update are two separate network calls with no atomicity guarantee. Design your recovery path around this: PROCESSING records need a lease expiry and a reconciliation job, not the assumption that writes always complete cleanly.</p>
+<p><strong>The v1 question is worth asking explicitly.</strong> Building a platform before the second and third client requirements are firm risks building the wrong abstraction. Sometimes the honest answer is "ship the simple path first, design the platform when requirements are concrete." Ousterhout's complexity principle applies at the meta level, and intellectual honesty about it is a feature, not a failure.</p>
+<p><strong>Naming systems is worth doing intentionally.</strong> Ubiquitous language creates shared vocabulary, reduces translation overhead, and builds team ownership. Huginn and Muninn — Odin's ravens, one carrying thought outward and one carrying memory home — are immediately intuitive once explained, and the metaphor does real cognitive work every time a team member asks "is this a Huginn problem or a Muninn problem?" Invest in the name.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.highlight", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -4,7 +4,7 @@ Engineering leader with a focus on distributed systems, developer experience, an
 
 ## Designs
 
-- [Designing a Governed Inbound Data Integration Pipeline](designs/iris-pipeline-architecture-design-PORTFOLIO.md)
+- [Designing a Governed Inbound Data Integration Pipeline](designs/inbound-update-integration-pipeline.md)
 
 ## About
 

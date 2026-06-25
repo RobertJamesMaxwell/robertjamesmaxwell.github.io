@@ -15,10 +15,20 @@ theme:
     - search.highlight
     - content.code.copy
 
+markdown_extensions:
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
 extra_css:
   - stylesheets/extra.css
+
+extra_javascript:
+  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
 
 nav:
   - Home: index.md
   - Designs:
-      - Inbound Updates Integration Pipeline: designs/iris-pipeline-architecture-design-PORTFOLIO.md
+      - Inbound Update Integration Pipeline: designs/inbound-update-integration-pipeline.md
